@@ -61,5 +61,7 @@ function showActiveSection(sections , activeLink ) {
             
         }
     })
+    console.log(sectionTarget);
     window.location.hash = sectionTarget;
+    console.log(window.location.hash);
 }
