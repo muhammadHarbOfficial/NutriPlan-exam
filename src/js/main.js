@@ -13,20 +13,19 @@ let currentActiveLink = document.querySelector('.bg-emerald-50.text-emerald-700'
 let relatedSections = {
     "all-recipes-section": ["search-filters-section", "meal-categories-section"]
 };
-let sectionTarget;
-console.log();
-console.log(currentActiveLink);
+
 console.log(currentActiveLink.querySelector('span').innerText);
 
 ( _ => {
     activeLink(links)
-    showActiveSection(sections, currentActiveLink)
+    showActiveSection(sections)
 })();
 
 
 function activeLink(links) {
     links.forEach(link => {
         link.addEventListener('click', e => {
+            e.preventDefault();
             links.forEach(link => {
                 link.classList.remove('bg-emerald-50', 'text-emerald-700')
                 link.classList.add('text-gray-600', 'hover:bg-gray-50')
@@ -35,6 +34,7 @@ function activeLink(links) {
             })
             e.currentTarget.classList.add('bg-emerald-50', 'text-emerald-700')
             e.currentTarget.classList.remove('text-gray-600', 'hover:bg-gray-50')
+            currentActiveLink = e.currentTarget
             showActiveSection(sections, e.currentTarget)
         })
     })
@@ -42,7 +42,8 @@ function activeLink(links) {
 
 
 
-function showActiveSection(sections , activeLink ) {
+function showActiveSection(sections , activeLink = currentActiveLink) {
+    let sectionTarget = '';
     let newSections = sections.filter(section => section.id.endsWith('section'))
     let activeLinkValue = activeLink.querySelector('span').innerText.toLowerCase().replace(/ /g,'')
     sections.forEach(section => {
@@ -53,15 +54,15 @@ function showActiveSection(sections , activeLink ) {
         let sectionWords = sectionValue.split('-')
         if (sectionWords.some(word => activeLinkValue.includes(word))) {
             section.classList.remove('hidden')
-            sectionTarget= section.id
             let homeSection = relatedSections[section.id]
             if(homeSection) {
                 homeSection.forEach(id => document.querySelector('#' + id).classList.remove('hidden'))
+                sectionValue = "home"
             }
-            
-        }
+            sectionTarget= sectionValue;
+        }   
     })
-    console.log(sectionTarget);
-    window.location.hash = sectionTarget;
-    console.log(window.location.hash);
+    if (sectionTarget) {
+        window.location.hash = `${sectionTarget}`;
+    }
 }
