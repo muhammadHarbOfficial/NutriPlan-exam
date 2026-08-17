@@ -13,6 +13,38 @@ let currentActiveLink = document.querySelector('.bg-emerald-50.text-emerald-700'
 let relatedSections = {
     "all-recipes-section": ["search-filters-section", "meal-categories-section"]
 };
+let areasButtons;
+let toggleViewButtons = Array.from(document.querySelectorAll('#view-toggle button'))
+let openMenuBtn = document.querySelector('#header-menu-btn')
+let closeMenuBtn = document.querySelector('#sidebar-close-btn')
+
+openMenuBtn.addEventListener('click', e => {
+    document.querySelector('#sidebar-overlay').classList.toggle('active')
+    document.querySelector('#sidebar').classList.toggle('open')
+})
+
+closeMenuBtn.addEventListener('click', e => {
+    document.querySelector('#sidebar-overlay').classList.toggle('active')
+    document.querySelector('#sidebar').classList.toggle('open')
+})
+
+
+//! OOP Classes
+
+class Loading {
+    constructor(){
+        this.element = document.querySelector('#app-loading-overlay')
+    }
+
+    show() {
+        this.element.classList.remove('hidden')
+    }
+
+    hide() {
+        this.element.classList.add('hidden')
+    }
+
+}
 class ApiService {
     constructor(baseUrl) { 
         this.baseUrl = baseUrl
@@ -53,10 +85,19 @@ class MealService {
         return await this.api.getEndPoint(`meals/search?q=${query}&page=${page}&limit=${limit}`);
     }
 
+    async filterMeals(category, page = 1, limit = 25) {
+        return await this.api.getEndPoint(`meals/filter?category=${category}&page=${page}&limit=${limit}`)
+    }
+
+    async mealsByArea(area, page = 1, limit = 25) {
+        return await this.api.getEndPoint(`meals/filter?area=${area}&page=${page}&limit=${limit}`)
+    }
+
 }
 
 class HomePage {
-    constructor(mealServiceData, mealCategories, mealAreas) {
+    constructor(mealService, mealServiceData, mealCategories, mealAreas) {
+        this.mealService = mealService
         this.meals = mealServiceData
         this.mealCategories = mealCategories
         this.mealAreas = mealAreas
@@ -210,7 +251,7 @@ class HomePage {
                             ${meal.name}
                         </h3>
                         <p class="text-xs text-gray-600 mb-3 line-clamp-2">
-                            ${meal.instructions[0].substring(0,)}
+                            ${meal.instructions.join(' ')}
                         </p>
                         <div class="flex items-center justify-between text-xs">
                             <span class="font-semibold text-gray-900">
@@ -227,6 +268,7 @@ class HomePage {
     }
 
     renderMeals(meals = this.meals) {
+        document.querySelector('#recipes-count').innerText = `Showing ${meals.length} recipes`;
         let grid = document.querySelector('#recipes-grid');
         grid.innerHTML = ''
         meals.forEach(meal => {
@@ -234,25 +276,74 @@ class HomePage {
         })
     }
 
+    activeCategory(categoriesCard) {
+        categoriesCard.forEach(category => {
+            category.addEventListener('click', async e => {
+                const categoryName = e.currentTarget.dataset.category;
+                const data = await this.mealService.filterMeals(categoryName)
+            
+                this.renderMeals(data.results)
+            })
+        })
+    }
+
+    activeArea(areasButtons) {
+        areasButtons.forEach(areaButton => {
+            areaButton.addEventListener('click', async e => {
+                const areaName = e.currentTarget.innerText
+                if (areaName.toLowerCase() == ('all recipes')) {
+                    this.renderMeals()
+                    return;
+                }
+                const data = await this.mealService.mealsByArea(areaName)
+                this.renderMeals(data.results)
+            })
+        })
+    }
+
+    search(searchInput = document.querySelector('#search-input  ')) {
+        searchInput.addEventListener('input', async e => {
+            const query = e.target.value.trim()
+
+            if(!query) {
+                this.renderMeals()
+            }
+
+            const data = await this.mealService.searchMeals(query)
+            this.renderMeals(data.results)
+        })
+    }
+
 }
 
 (async function() {
-    activeLink(links)
-    showActiveSection(sections)
-    const api = new ApiService('https://nutriplan-api.vercel.app/api/')
-    // const data = await api.getEndPoint('meals/search?q=chicken&page=1&limit=25')
-    const meal = new MealService(api);
-    const mealAreas = await meal.getAreas()
-    const mealCategories = await meal.getCategories()
-    const mealData = await meal.searchMeals();
-    const homeMeals = new HomePage(mealData.results, mealCategories.results, mealAreas.results.slice(0, 10));
-    homeMeals.renderMeals();
-    homeMeals.renderCategories();
-    homeMeals.renderAreas();
-    // console.log(homeMeals);
-    console.log(mealAreas.results.slice(0, 10));
-    console.log(Object.keys(mealData.results[0]));
-    // console.log(mealData.results);
+    const loading = new Loading()
+    loading.show()
+    try {
+    
+        activeLink(links)
+        showActiveSection(sections)
+        const api = new ApiService('https://nutriplan-api.vercel.app/api/')
+        const meal = new MealService(api);
+        const mealAreas = await meal.getAreas()
+        const mealCategories = await meal.getCategories()
+        const mealData = await meal.searchMeals();
+        const homeMeals = new HomePage(meal, mealData.results, mealCategories.results, mealAreas.results.slice(0, 10));
+        homeMeals.renderMeals();
+        homeMeals.renderCategories();
+        homeMeals.renderAreas();
+        const categoriesCards = document.querySelectorAll('.category-card');
+        homeMeals.activeCategory(categoriesCards)
+        areasButtons = Array.from(document.querySelectorAll('#search-filters-section button'));
+        homeMeals.activeArea(areasButtons)
+        homeMeals.search()
+        activeArea(areasButtons);
+        changeViewRecipes(toggleViewButtons);
+    } catch(error) {
+        console.error(error)
+    } finally{
+        loading.hide()
+    }
 
 })();
 
@@ -269,13 +360,44 @@ function activeLink(links) {
             })
             e.currentTarget.classList.add('bg-emerald-50', 'text-emerald-700')
             e.currentTarget.classList.remove('text-gray-600', 'hover:bg-gray-50')
+            e.currentTarget.querySelector('span').classList.add('font-semibold')
+            e.currentTarget.querySelector('span').classList.remove('font-medium')
             currentActiveLink = e.currentTarget
             showActiveSection(sections, e.currentTarget)
         })
     })
 }
 
+function activeArea(areasButtons) {
+    areasButtons.forEach(area => {
+        area.addEventListener('click', e => {
+            areasButtons.forEach(area => {
+                area.classList.remove('bg-emerald-600', 'text-white', 'hover:bg-emerald-700')
+                area.classList.add('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200')
+            })
+            e.currentTarget.classList.add('bg-emerald-600', 'text-white', 'hover:bg-emerald-700')
+            e.currentTarget.classList.remove('bg-gray-100', 'text-gray-700', 'hover:bg-gray-200')
+        })
+    })
+}
 
+function changeViewRecipes(buttons) {
+    buttons.forEach(button => {
+        button.addEventListener('click', e => {
+            buttons.forEach(button => {
+                button.classList.remove('bg-white','rounded-md','shadow-sm')
+            })
+            e.currentTarget.classList.add('bg-white','rounded-md','shadow-sm')
+            if(e.currentTarget.id == 'list-view-btn') {
+                document.querySelector('#recipes-grid').classList.remove('grid-cols-4')
+                document.querySelector('#recipes-grid').classList.add('grid-cols-2')
+            } else {
+                document.querySelector('#recipes-grid').classList.add('grid-cols-4')
+                document.querySelector('#recipes-grid').classList.remove('grid-cols-2')
+            }
+        })
+    })
+}
 
 function showActiveSection(sections , activeLink = currentActiveLink) {
     let sectionTarget = '';
@@ -313,4 +435,4 @@ function showActiveSection(sections , activeLink = currentActiveLink) {
 
 // console.log(meal);
 // console.log(data);
-console.log(document.querySelector('#search-filters-section div.mx-auto > div:last-child'));
+
