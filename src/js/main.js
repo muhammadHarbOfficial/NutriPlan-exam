@@ -242,11 +242,7 @@ class HomePage {
                             >
                                 ${meal.category}
                             </span>
-                            <span
-                                class="px-2 py-1 bg-emerald-500 text-xs font-semibold rounded-full text-white"
-                            >
-                                ${meal.area}
-                            </span>
+                            ${meal.area != null? `<span class="px-2 py-1 bg-emerald-500 text-xs font-semibold rounded-full text-white">${meal.area}</span>`: ''} 
                         </div>
                     </div>
                     <div class="p-4">
