@@ -28,6 +28,11 @@ closeMenuBtn.addEventListener('click', e => {
     document.querySelector('#sidebar').classList.toggle('open')
 })
 
+document.querySelector('#sidebar-overlay').addEventListener('click', e => {
+    document.querySelector('#sidebar-overlay').classList.toggle('active')
+    document.querySelector('#sidebar').classList.toggle('open')
+})
+
 
 //! OOP Classes
 
@@ -37,11 +42,11 @@ class Loading {
     }
 
     show() {
-        this.element.classList.remove('hidden')
+        this.element.style.display = 'flex'
     }
 
     hide() {
-        this.element.classList.add('hidden')
+        this.element.style.display = 'none'
     }
 
 }
