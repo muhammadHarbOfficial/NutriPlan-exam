@@ -261,7 +261,7 @@ class HomePage {
                             </span>
                             <span class="font-semibold text-gray-500">
                                 <i class="fa-solid fa-globe text-blue-500 mr-1"></i>
-                                ${meal.area}
+                                ${meal.area != null ? meal.area : 'International'}
                             </span>
                         </div>
                     </div>
@@ -424,16 +424,3 @@ function showActiveSection(sections , activeLink = currentActiveLink) {
         window.location.hash = `${sectionTarget}`;
     }
 }
-
-// https://nutriplan-api.vercel.app/api/meals/search?q=chicken&page=1&limit=25
-
-
-// const api = new ApiService('https://nutriplan-api.vercel.app/api/')
-// // const data = await api.getEndPoint('meals/search?q=chicken&page=1&limit=25')
-// const meal = new MealService(api);
-// const mealData = await meal.searchMeals();
-// const homeMeals = new HomePage(mealData.results);
-
-// console.log(meal);
-// console.log(data);
-
